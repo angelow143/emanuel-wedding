@@ -45,3 +45,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/wishes/{wish}', [WishController::class, 'destroy']);
     Route::patch('/wishes/{wish}/toggle-visibility', [WishController::class, 'toggleVisibility']);
 });
+
+Route::get('/debug-log', function() { return file_exists(storage_path('logs/laravel.log')) ? file_get_contents(storage_path('logs/laravel.log')) : 'No log file'; });
