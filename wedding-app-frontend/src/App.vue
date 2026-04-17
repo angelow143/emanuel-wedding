@@ -2,8 +2,11 @@
 import { ref, onMounted, nextTick, computed, watch } from 'vue';
 import axios from 'axios';
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+// API Configuration — uses Vite env var in production, falls back to localhost for dev
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
+// Global axios timeout — requests fail fast (10s) instead of hanging forever
+axios.defaults.timeout = 10000;
 
 // Carousel Key
 const carouselKey = ref(0);
@@ -569,20 +572,15 @@ const toggleWishVisibility = async (id) => {
 };
 
 onMounted(async () => {
-  await checkAuth();
-  await fetchSettings();
-  await fetchWishes();
-  await fetchAlbums();
-  await fetchGalleries(); // Load Images Dynamically
-
+  // ── STEP 1: Init template FIRST so preloader dismisses immediately ──
   setTimeout(() => {
-    // Initialize Countdown (matches demo script)
+    // Initialize Countdown
     if (window.simplyCountdown) {
       window.simplyCountdown('.simply-countdown-one', {
         year: 2026,
-        month: 3, 
+        month: 3,
         day: 30,
-        hours: 8, 
+        hours: 8,
         minutes: 0,
         seconds: 0,
         enableUtc: false,
@@ -590,6 +588,7 @@ onMounted(async () => {
       });
     }
 
+    // Dismiss preloader immediately — don't wait for API
     if (window.initTemplate) {
       window.initTemplate();
     }
@@ -599,7 +598,7 @@ onMounted(async () => {
       const $ = window.jQuery;
       $(document).on('click', '#fh5co-offcanvas a', function(e) {
         const text = $(this).text().trim().toLowerCase();
-        
+
         // Navigation Mapping
         if (text === 'home') navigatePage('home');
         else if (text === 'gallery') navigatePage('gallery');
@@ -613,7 +612,7 @@ onMounted(async () => {
         // Close mobile menu
         $('body').removeClass('offcanvas overflow');
         $('.js-fh5co-nav-toggle').removeClass('active');
-        
+
         // Prevent default and let Vue handle navigation
         e.preventDefault();
       });
@@ -623,6 +622,20 @@ onMounted(async () => {
     initGalleryMagnific();
 
   }, 500);
+
+  // ── STEP 2: Fetch all initial data in parallel ──
+  // This happens async in the background while the UI has already rendered
+  try {
+    await Promise.allSettled([
+      checkAuth(),
+      fetchSettings(),
+      fetchWishes(),
+      fetchAlbums(),
+      fetchGalleries()
+    ]);
+  } catch (err) {
+    console.error('Failed fetching data:', err);
+  }
 });
 const groupedGallery = computed(() => {
   const groups = [];
