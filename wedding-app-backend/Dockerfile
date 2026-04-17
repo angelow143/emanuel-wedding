@@ -11,6 +11,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
+# Force debug mode to reveal the error
+ENV APP_DEBUG=true
+
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
