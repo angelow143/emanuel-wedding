@@ -27,19 +27,9 @@ class GalleryController extends Controller
 
         $results = [];
 
-        // Single image upload
-        if ($validated['image'] ?? null) {
-            $gallery = Gallery::create([
-                'image' => $validated['image'],
-                'title' => $title,
-                'user_id' => $userId,
-                'album_id' => $albumId
-            ]);
-            $results[] = $gallery;
-        }
-
-        // Bulk image upload
-        if ($validated['images'] ?? null) {
+        // Prefer bulk `images` array if provided (even if it has only 1 item)
+        // This prevents double-creation when frontend sets both `image` and `images`
+        if (!empty($validated['images'])) {
             foreach ($validated['images'] as $imgData) {
                 $gallery = Gallery::create([
                     'image' => $imgData,
@@ -49,6 +39,15 @@ class GalleryController extends Controller
                 ]);
                 $results[] = $gallery;
             }
+        } elseif (!empty($validated['image'])) {
+            // Fallback to single image only if images array is absent/empty
+            $gallery = Gallery::create([
+                'image' => $validated['image'],
+                'title' => $title,
+                'user_id' => $userId,
+                'album_id' => $albumId
+            ]);
+            $results[] = $gallery;
         }
 
         return response()->json($results, 201);
