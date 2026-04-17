@@ -1,0 +1,5 @@
+/* 
+   Cleaning up Tailwind base to avoid conflicts with original template styles.
+   We only keep utilities in case we need small tweaks.
+*/
+@tailwind utilities;
